@@ -1,0 +1,307 @@
+openapi: 3.0.3
+info:
+  title: Bullet Journal API
+  description: An API for managing bullet journal like entries
+  version: 1.0.0
+tags:
+  - name: Users
+  - name: Entries
+    description: Different types of entries that make up a users bullet journal
+paths:
+  "/v1/users":
+    post:
+      tags:
+        - Users
+      summary: Create a new user
+      operationId: createUser
+      requestBody:
+        description: The user to create
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/createUserRequestBody"
+      responses:
+        201:
+          description: Created new user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/user"
+        400:
+          description: Bad input parameter
+        409:
+          description: A user with this email address already exists
+  "/v1/users/{id}":
+    parameters:
+      - name: id
+        in: path
+        schema:
+          type: string
+          format: uuid
+        required: true
+    get:
+      tags:
+        - Users
+      summary: Get user information
+      operationId: getUser
+      responses:
+        200:
+          description: Successfully retrieved user information
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/user"
+        404:
+          description: A user with the given id does not exist
+
+    patch:
+      tags:
+        - Users
+      summary: Change user information
+      operationId: patchUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/patchUserRequestBody"
+      responses:
+        200:
+          description: Successfully updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/user"
+        400:
+          description: Bad input parameter
+        404:
+          description: A user with the given id does not exist
+        409:
+          description: A user with this email address already exists
+    delete:
+      tags:
+        - Users
+      summary: Delete user
+      operationId: deleteUser
+      responses:
+        204:
+          description: Succsessfully deleted user
+        404:
+          description: A user with the given id does not exist
+
+  "/v1/entries":
+    post:
+      tags:
+        - Entries
+      summary: Create new entry
+      operationId: createEntry
+      requestBody:
+        description: The entry to create
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/createEntryRequestBody"
+      responses:
+        201:
+          description: Successfully created new entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/entry"
+        400:
+          description: Bad input parameter
+    get:
+      tags:
+        - Entries
+      summary: Get all entries
+      operationId: getEntries
+      parameters:
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+      responses:
+        200:
+          description: All entries in the given range
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/entry"
+        400:
+          description: Bad input parameter
+
+  "/v1/entries/{id}":
+    parameters:
+      - name: id
+        in: path
+        schema:
+          type: string
+          format: uuid
+        required: true
+    put:
+      tags:
+        - Entries
+      summary: Update entry
+      operationId: updateEntry
+      requestBody:
+        description: The new entry
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/createEntryRequestBody"
+      responses:
+        200:
+          description: Successfully updated entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/entry"
+        400:
+          description: Bad input parameter
+        404:
+          description: An entry with the given id does not exist
+    delete:
+      tags:
+        - Entries
+      summary: Delete entry
+      operationId: deleteEntry
+      responses:
+        204:
+          description: Succsessfully deleted entry
+        404:
+          description: An entry with the given id does not exist
+
+components:
+  schemas:
+    patchUserRequestBody:
+      type: object
+      properties:
+        firstName:
+          type: string
+          example: Kim
+        lastName:
+          type: string
+          example: Com
+        email:
+          type: string
+          example: kim@com.com
+    createUserRequestBody:
+      allOf:
+        - $ref: "#/components/schemas/patchUserRequestBody"
+      required:
+        - email
+    user:
+      allOf:
+        - $ref: "#/components/schemas/createUserRequestBody"
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+      required:
+        - id
+
+    entryType:
+      type: string
+      enum:
+        - task
+        - note
+        - event
+      example: task
+    entryStatus:
+      type: string
+      nullable: true
+      enum:
+        - done
+        - cancelled
+        - migrated
+        - null
+      example: done
+    entryTime:
+      type: object
+      properties:
+        hour:
+          type: integer
+          minimum: 0
+          maximum: 23
+          example: 11
+        minute:
+          type: integer
+          minimum: 0
+          maximum: 59
+          example: 23
+      required:
+        - hour
+        - minute
+    entryDateTime:
+      type: object
+      properties:
+        year:
+          type: integer
+          minimum: 2000
+          example: 2022
+        month:
+          type: integer
+          minimum: 1
+          maximum: 12
+          example: 7
+        day:
+          type: integer
+          minimum: 1
+          maximum: 31
+          example: 4
+        time:
+          $ref: "#/components/schemas/entryTime"
+      required:
+        - year
+        - month
+
+    subEntry:
+      type: object
+      properties:
+        type:
+          $ref: "#/components/schemas/entryType"
+        status:
+          $ref: "#/components/schemas/entryStatus"
+        text:
+          type: string
+          example: This is a todo entry...
+        children:
+          type: array
+          items:
+            $ref: "#/components/schemas/subEntry"
+      required:
+        - type
+        - status
+        - text
+        - children
+
+    createEntryRequestBody:
+      allOf:
+        - $ref: "#/components/schemas/subEntry"
+      properties:
+        dateTime:
+          $ref: "#/components/schemas/entryDateTime"
+      required:
+        - dateTime
+
+    entry:
+      allOf:
+        - $ref: "#/components/schemas/createEntryRequestBody"
+      properties:
+        id:
+          type: string
+          format: uuid
