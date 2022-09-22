@@ -1,7 +1,7 @@
 import { IUser } from "domain/IUser";
 import { Express } from "express";
 
-const UserController = (app: Express) => {
+const UserRoutes = (app: Express) => {
   app.get("/v1/users/:id", (req, res) => {
     const id = req.params.id;
     const user: IUser = {
@@ -14,4 +14,4 @@ const UserController = (app: Express) => {
   });
 };
 
-export default UserController;
+export default UserRoutes;

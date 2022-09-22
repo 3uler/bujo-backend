@@ -1,9 +1,9 @@
 import express from "express";
-import UserController from "./controller/UserController";
+import UserRoutes from "./routes/UserRoutes";
 
 const app = express();
 
-UserController(app);
+UserRoutes(app);
 
 const port = process.env.PORT || 3000;
 
