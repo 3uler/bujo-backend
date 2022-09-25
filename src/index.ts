@@ -10,6 +10,7 @@ dotenv.config();
 const connectionString = process.env.MONGO_URI || "";
 mongoose.connect(connectionString, { dbName: process.env.DB_NAME || "bujo" });
 
+app.use(express.json());
 UserRoutes(app);
 
 app.use(errorMiddleware);
