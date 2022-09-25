@@ -1,6 +1,11 @@
 import { Express } from "express";
+import DuplicatedEmailException from "../repositories/exceptions/DuplicatedEmailException";
+import MissingFieldsException from "../repositories/exceptions/MissingFieldsException";
 import UserNotFoundException from "../repositories/exceptions/UserNotFoundException";
-import UserRepository from "../repositories/UserRepository";
+import { ICreateUser } from "../repositories/user/CreateUser.dto";
+import UserRepository from "../repositories/user/UserRepository";
+import ConflictException from "./exceptions/ConflictException";
+import InvalidInputException from "./exceptions/InvalidInputException";
 import NotFoundException from "./exceptions/NotFoundException";
 
 const UserRoutes = (app: Express) => {
@@ -21,9 +26,19 @@ const UserRoutes = (app: Express) => {
     });
   });
 
-  app.post("/v1/users", (req, res) => {
-    UserRepository.createUser((error, user) => {
-      res.json(user);
+  app.post("/v1/users", (req, res, next) => {
+    const userToCreate = req.body as ICreateUser;
+    UserRepository.createUser(userToCreate, (error, user) => {
+      if (error) {
+        if (error instanceof MissingFieldsException) {
+          return next(new InvalidInputException(error.message));
+        }
+        if (error instanceof DuplicatedEmailException) {
+          return next(new ConflictException(error.message));
+        }
+        return next(error);
+      }
+      res.status(201).json(user);
     });
   });
 
