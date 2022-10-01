@@ -1,36 +1,33 @@
-import mongoose, { CallbackError } from "mongoose";
+import mongoose from "mongoose";
 import User from "../../persistence/models/User";
+import IUserPersisted from "../../persistence/types/IUserPersisted";
 import DuplicatedEmailException from "../exceptions/DuplicatedEmailException";
 import MissingFieldsException from "../exceptions/MissingFieldsException";
 import UserNotFoundException from "../exceptions/UserNotFoundException";
 import { ICreateUser } from "./CreateUser.dto";
 
-type DoneCallback = (error: Error | null, data: any) => void;
+const userNullHandler = (id: string, user: IUserPersisted | null) => {
+  if (user === null) {
+    throw new UserNotFoundException(id);
+  }
+};
 
-const userPotentiallyNullHandler =
-  <T>(id: string, done: DoneCallback) =>
-  (error: CallbackError, data: T) => {
-    if (error) {
-      return done(error, null);
-    }
-    if (data === null) {
-      return done(new UserNotFoundException(id), null);
-    }
-    done(null, data);
-  };
-
-const findUserById = (id: string, done: DoneCallback) => {
-  User.findById(id, {}, userPotentiallyNullHandler(id, done));
+const findUserById = async (id: string): Promise<IUserPersisted> => {
+  const user = await User.findById(id);
+  userNullHandler(id, user);
+  return user!;
 };
 
 interface IMongoServerError extends Error {
   code: number;
 }
 
-const createUser = (userToCreate: ICreateUser, done: DoneCallback) => {
+const createUser = async (userToCreate: ICreateUser) => {
   const user = new User(userToCreate);
-  user.save((error, user) => {
-    if (error) {
+  try {
+    return await user.save();
+  } catch (error) {
+    if (error instanceof Error) {
       let applicationException = error;
       if (
         error.name === "MongoServerError" &&
@@ -43,18 +40,19 @@ const createUser = (userToCreate: ICreateUser, done: DoneCallback) => {
         const invalidFields = Object.keys(valError.errors);
         applicationException = new MissingFieldsException(invalidFields);
       }
-      return done(applicationException, null);
+      throw applicationException;
     }
-    done(null, user);
-  });
+    throw error;
+  }
 };
 
-const getAllUsers = (done: DoneCallback) => {
-  User.find({}, done);
+const getAllUsers = async () => {
+  return await User.find({});
 };
 
-const deleteUser = (id: string, done: DoneCallback) => {
-  User.findByIdAndDelete(id, {}, userPotentiallyNullHandler(id, done));
+const deleteUser = async (id: string) => {
+  const deletedUser = await User.findByIdAndDelete(id);
+  userNullHandler(id, deletedUser);
 };
 
 const UserRepository = {

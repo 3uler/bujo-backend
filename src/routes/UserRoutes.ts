@@ -9,52 +9,57 @@ import InvalidInputException from "./exceptions/InvalidInputException";
 import NotFoundException from "./exceptions/NotFoundException";
 
 const UserRoutes = (app: Express) => {
-  app.get("/v1/users/:id", (req, res) => {
+  app.get("/v1/users/:id", async (req, res, next) => {
     const id = req.params.id;
-    UserRepository.findUserById(id, (error, user) => {
-      if (user === null) {
-        res.status(404).send("User with the requested id not found.");
+    try {
+      const user = await UserRepository.findUserById(id);
+      res.json(user);
+    } catch (error) {
+      if (error instanceof UserNotFoundException) {
+        next(new NotFoundException(error.message));
       } else {
-        res.json(user);
+        next(error);
       }
-    });
+    }
   });
 
-  app.get("/v1/users", (req, res) => {
-    UserRepository.getAllUsers((_, users) => {
+  app.get("/v1/users", async (req, res, next) => {
+    try {
+      const users = await UserRepository.getAllUsers();
       res.json(users);
-    });
+    } catch (error) {
+      next(error);
+    }
   });
 
-  app.post("/v1/users", (req, res, next) => {
+  app.post("/v1/users", async (req, res, next) => {
     const userToCreate = req.body as ICreateUser;
-    UserRepository.createUser(userToCreate, (error, user) => {
-      if (error) {
-        if (error instanceof MissingFieldsException) {
-          return next(new InvalidInputException(error.message));
-        }
-        if (error instanceof DuplicatedEmailException) {
-          return next(new ConflictException(error.message));
-        }
-        return next(error);
+    try {
+      const createdUser = await UserRepository.createUser(userToCreate);
+      res.status(201).json(createdUser);
+    } catch (error) {
+      if (error instanceof MissingFieldsException) {
+        return next(new InvalidInputException(error.message));
       }
-      res.status(201).json(user);
-    });
+      if (error instanceof DuplicatedEmailException) {
+        return next(new ConflictException(error.message));
+      }
+      return next(error);
+    }
   });
 
-  app.delete("/v1/users/:id", (req, res, next) => {
+  app.delete("/v1/users/:id", async (req, res, next) => {
     const id = req.params.id;
-    UserRepository.deleteUser(id, (error, user) => {
-      if (error) {
-        if (error instanceof UserNotFoundException) {
-          next(new NotFoundException(error.message));
-        } else {
-          next(error);
-        }
+    try {
+      await UserRepository.deleteUser(id);
+      res.sendStatus(204);
+    } catch (error) {
+      if (error instanceof UserNotFoundException) {
+        next(new NotFoundException(error.message));
       } else {
-        res.sendStatus(204);
+        next(error);
       }
-    });
+    }
   });
 };
 
