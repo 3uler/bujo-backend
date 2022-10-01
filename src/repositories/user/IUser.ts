@@ -1,6 +1,8 @@
-export interface IUser {
+interface IUser {
   firstName: string;
   lastName: string;
   email: string;
-  id: string;
+  _id: string;
 }
+
+export default IUser;
