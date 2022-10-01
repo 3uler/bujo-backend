@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const userSchema = new mongoose.Schema({
+export const userSchema = new mongoose.Schema({
   firstName: {
     type: String,
     required: [true, "Enter a first name."],
@@ -14,6 +14,10 @@ const userSchema = new mongoose.Schema({
     required: [true, "Enter an email address"],
     lowercase: [true],
     unique: [true, "This email address is taken."],
+  },
+  password: {
+    type: String,
+    required: [true, "Enter a password"],
   },
 });
 
