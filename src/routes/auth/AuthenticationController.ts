@@ -26,7 +26,6 @@ class AuthenticationController implements IController {
       dtoValidationMiddleware(isLoginDto),
       this.loggingIn
     );
-    this.router.post(`${this.path}/logout`, this.loggingOut);
   };
 
   private registration = async (
@@ -36,9 +35,8 @@ class AuthenticationController implements IController {
   ) => {
     const userData: ICreateUser = req.body;
     try {
-      const { cookie, user } = await AuthenticationService.register(userData);
-      res.setHeader("Set-Cookie", [cookie]);
-      res.status(201).send(user);
+      const tokenAndUser = await AuthenticationService.register(userData);
+      res.status(201).send(tokenAndUser);
     } catch (error) {
       if (error instanceof MissingFieldsException) {
         return next(new InvalidInputException(error.message));
@@ -57,22 +55,14 @@ class AuthenticationController implements IController {
   ) => {
     const loginData: ILogin = req.body;
     try {
-      const { cookie, user } = await AuthenticationService.authenticate(
-        loginData
-      );
-      res.setHeader("Set-Cookie", [cookie]);
-      res.send(user);
+      const tokenAndUser = await AuthenticationService.authenticate(loginData);
+      res.send(tokenAndUser);
     } catch (error) {
       if (error instanceof WrongCredentialsException) {
         return next(new UnauthorizedException(error.message));
       }
       return next(error);
     }
-  };
-
-  private loggingOut = (req: Request, res: Response) => {
-    res.setHeader("Set-Cookie", ["Authorization=;Max-age=0"]);
-    res.sendStatus(200);
   };
 }
 

@@ -1,5 +1,7 @@
-import { NextFunction, Request, Response, Router } from "express";
+import { NextFunction, Response, Router } from "express";
 import IController from "../../interfaces/IController";
+import IRequestWithUser from "../../interfaces/IRequestWithUser";
+import authenticationMiddleware from "../../middleware/AuthenticationMiddleware";
 import DuplicatedEmailException from "../../repositories/exceptions/DuplicatedEmailException";
 import MissingFieldsException from "../../repositories/exceptions/MissingFieldsException";
 import UserNotFoundException from "../../repositories/exceptions/UserNotFoundException";
@@ -18,13 +20,21 @@ class UserController implements IController {
   }
 
   private initRoutes = () => {
-    this.router.get(`${this.path}/:id`, this.getUser);
-    this.router.get(this.path, this.getAllUsers);
-    this.router.post(this.path, this.createUser);
-    this.router.delete(`${this.path}/:id`, this.deleteUser);
+    this.router.get(`${this.path}/:id`, authenticationMiddleware, this.getUser);
+    this.router.get(this.path, authenticationMiddleware, this.getAllUsers);
+    this.router.post(this.path, authenticationMiddleware, this.createUser);
+    this.router.delete(
+      `${this.path}/:id`,
+      authenticationMiddleware,
+      this.deleteUser
+    );
   };
 
-  private getUser = async (req: Request, res: Response, next: NextFunction) => {
+  private getUser = async (
+    req: IRequestWithUser,
+    res: Response,
+    next: NextFunction
+  ) => {
     const id = req.params.id;
     try {
       const user = await UserRepository.findUserById(id);
@@ -39,7 +49,7 @@ class UserController implements IController {
   };
 
   private getAllUsers = async (
-    req: Request,
+    req: IRequestWithUser,
     res: Response,
     next: NextFunction
   ) => {
@@ -52,7 +62,7 @@ class UserController implements IController {
   };
 
   private createUser = async (
-    req: Request,
+    req: IRequestWithUser,
     res: Response,
     next: NextFunction
   ) => {
@@ -72,7 +82,7 @@ class UserController implements IController {
   };
 
   private deleteUser = async (
-    req: Request,
+    req: IRequestWithUser,
     res: Response,
     next: NextFunction
   ) => {
