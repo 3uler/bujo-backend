@@ -1,21 +1,10 @@
 import dotenv from "dotenv";
-import express from "express";
-import mongoose from "mongoose";
-import errorMiddleware from "./middleware/ErrorMiddleware";
-import UserRoutes from "./routes/UserRoutes";
-
-const app = express();
+import App from "./App";
+import AuthenticationController from "./routes/auth/AuthenticationController";
+import UserController from "./routes/users/UserController";
 
 dotenv.config();
-const connectionString = process.env.MONGO_URI || "";
-mongoose.connect(connectionString, { dbName: process.env.DB_NAME || "bujo" });
 
-app.use(express.json());
-UserRoutes(app);
+const app = new App([new AuthenticationController(), new UserController()]);
 
-app.use(errorMiddleware);
-
-process.env.MONGO_URI;
-const port = process.env.PORT || 3000;
-
-app.listen(port, () => console.log(`listening on port ${port}`));
+app.listen();
