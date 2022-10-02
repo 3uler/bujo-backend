@@ -14,7 +14,8 @@ const register = async (userData: ICreateUser) => {
   });
   const tokenData = createToken(user);
   const cookie = createCookie(tokenData);
-  return { cookie, user };
+  const { password, ...userWithoutPassword } = user;
+  return { cookie, user: userWithoutPassword };
 };
 
 const createToken = (user: IUserPersisted): ITokenData => {
