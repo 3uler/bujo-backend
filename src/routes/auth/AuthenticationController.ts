@@ -1,11 +1,11 @@
 import { NextFunction, Request, Response, Router } from "express";
-import IController from "../interfaces/IController";
-import DuplicatedEmailException from "../repositories/exceptions/DuplicatedEmailException";
-import MissingFieldsException from "../repositories/exceptions/MissingFieldsException";
-import { ICreateUser } from "../repositories/user/CreateUser.dto";
-import AuthenticationService from "../services/AuthenticationService";
-import ConflictException from "./exceptions/ConflictException";
-import InvalidInputException from "./exceptions/InvalidInputException";
+import IController from "../../interfaces/IController";
+import DuplicatedEmailException from "../../repositories/exceptions/DuplicatedEmailException";
+import MissingFieldsException from "../../repositories/exceptions/MissingFieldsException";
+import { ICreateUser } from "../../repositories/user/CreateUser.dto";
+import AuthenticationService from "../../services/AuthenticationService";
+import ConflictException from "../exceptions/ConflictException";
+import InvalidInputException from "../exceptions/InvalidInputException";
 
 class AuthenticationController implements IController {
   public path = "/auth";
