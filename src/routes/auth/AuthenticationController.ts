@@ -37,7 +37,8 @@ class AuthenticationController implements IController {
     const userData: ICreateUser = req.body;
     try {
       const { cookie, user } = await AuthenticationService.register(userData);
-      res.setHeader("Set-Cookie", [cookie]).send(user);
+      res.setHeader("Set-Cookie", [cookie]);
+      res.status(201).send(user);
     } catch (error) {
       if (error instanceof MissingFieldsException) {
         return next(new InvalidInputException(error.message));
@@ -59,7 +60,8 @@ class AuthenticationController implements IController {
       const { cookie, user } = await AuthenticationService.authenticate(
         loginData
       );
-      res.setHeader("Set-Cookie", [cookie]).send(user);
+      res.setHeader("Set-Cookie", [cookie]);
+      res.send(user);
     } catch (error) {
       if (error instanceof WrongCredentialsException) {
         return next(new UnauthorizedException(error.message));
@@ -69,7 +71,8 @@ class AuthenticationController implements IController {
   };
 
   private loggingOut = (req: Request, res: Response) => {
-    res.setHeader("Set-Cookie", ["Authorization=;Max-age=0"]).send(200);
+    res.setHeader("Set-Cookie", ["Authorization=;Max-age=0"]);
+    res.send(200);
   };
 }
 
