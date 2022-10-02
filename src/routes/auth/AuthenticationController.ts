@@ -1,11 +1,15 @@
 import { NextFunction, Request, Response, Router } from "express";
 import IController from "../../interfaces/IController";
+import dtoValidationMiddleware from "../../middleware/DtoValidationMiddleware";
 import DuplicatedEmailException from "../../repositories/exceptions/DuplicatedEmailException";
 import MissingFieldsException from "../../repositories/exceptions/MissingFieldsException";
 import { ICreateUser } from "../../repositories/user/CreateUser.dto";
 import AuthenticationService from "../../services/AuthenticationService";
+import WrongCredentialsException from "../../services/exceptions/WrongCredentialsException";
 import ConflictException from "../exceptions/ConflictException";
 import InvalidInputException from "../exceptions/InvalidInputException";
+import UnauthorizedException from "../exceptions/UnauthorizedException";
+import ILogin, { isLoginDto } from "./ILogin";
 
 class AuthenticationController implements IController {
   public path = "/auth";
@@ -15,7 +19,15 @@ class AuthenticationController implements IController {
     this.initRoutes();
   }
 
-  private initRoutes = () => {};
+  private initRoutes = () => {
+    this.router.post(`${this.path}/register`, this.registration);
+    this.router.post(
+      `${this.path}/login`,
+      dtoValidationMiddleware(isLoginDto),
+      this.loggingIn
+    );
+    this.router.post(`${this.path}/logout`, this.loggingOut);
+  };
 
   private registration = async (
     req: Request,
@@ -42,6 +54,23 @@ class AuthenticationController implements IController {
     res: Response,
     next: NextFunction
   ) => {
-    const loginData: = req.body;
-  }
+    const loginData: ILogin = req.body;
+    try {
+      const { cookie, user } = await AuthenticationService.authenticate(
+        loginData
+      );
+      res.setHeader("Set-Cookie", [cookie]).send(user);
+    } catch (error) {
+      if (error instanceof WrongCredentialsException) {
+        return next(new UnauthorizedException(error.message));
+      }
+      return next(error);
+    }
+  };
+
+  private loggingOut = (req: Request, res: Response) => {
+    res.setHeader("Set-Cookie", ["Authorization=;Max-age=0"]).send(200);
+  };
 }
+
+export default AuthenticationController;

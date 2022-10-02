@@ -18,6 +18,12 @@ const findUserById = async (id: string): Promise<IUserPersisted> => {
   return user!;
 };
 
+const findUserByEmail = async (email: string): Promise<IUserPersisted> => {
+  const user = await User.findOne({ email });
+  userNullHandler(email, user);
+  return user!;
+};
+
 interface IMongoServerError extends Error {
   code: number;
 }
@@ -58,6 +64,7 @@ const deleteUser = async (id: string) => {
 const UserRepository = {
   createUser,
   findUserById,
+  findUserByEmail,
   getAllUsers,
   deleteUser,
 };
